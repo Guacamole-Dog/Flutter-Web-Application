@@ -1,7 +1,10 @@
 # CI/CD Pipelines
 
 ## Environment
-The CI/CD 
+My CI/CD pipeline operates at a web level through the use of GitHub. Since it is integrated and deployed to a website instead of a download, the user's operating system does not matter as long as it can access the web.
+The deployment is provided through GitHub's cloud and network, but network configurations that blacklist web access are a concern when deploying the application.
+
+
 
 Your task is to draft the CI/CD pipeline section of your semester project report. Your draft should encompass the following components:
 
