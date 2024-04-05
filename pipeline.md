@@ -6,7 +6,7 @@ My CI/CD pipeline operates at a web level through the use of GitHub. Since it is
 
 
 ## Tools
-The tools used in the pipeline are GitHub Actions. GitHub Actions is used with custom workflow files to automatically update and deploy the Flutter application to the website whenever new code is merged with the main branch. 
+**The main tool used in the pipeline is GitHub Actions.** GitHub Actions is used with custom workflow files to automatically update and deploy the Flutter application to the website whenever new code is merged with the main branch. 
 - **GitHub Actions is very powerful due to its innate integration with GitHub, meaning that use of another program or service is not needed if the repository is within GitHub.** Additionally, GitHub provides a lot of pre-packaged tools to developers, making learning easier, and is very scalable.
 - **However, GitHub Actions is dependent on GitHub and therefore has very limited third-party integrations.**
 
