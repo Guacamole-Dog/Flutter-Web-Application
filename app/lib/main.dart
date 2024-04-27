@@ -1,43 +1,8 @@
-// Copyright 2022, the Flutter project authors. Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
-import 'dart:developer' as dev;
-
-import 'package:flutter/foundation.dart';
+import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
-import 'app_lifecycle/app_lifecycle.dart';
-import 'audio/audio_controller.dart';
-import 'player_progress/player_progress.dart';
-import 'router.dart';
-import 'settings/settings.dart';
-import 'style/palette.dart';
-
-void main() async {
-  // Basic logging setup.
-  Logger.root.level = kDebugMode ? Level.FINE : Level.INFO;
-  Logger.root.onRecord.listen((record) {
-    dev.log(
-      record.message,
-      time: record.time,
-      level: record.level.value,
-      name: record.loggerName,
-    );
-  });
-
-  WidgetsFlutterBinding.ensureInitialized();
-  // Put game into full screen mode on mobile devices.
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  // Lock the game to portrait mode on mobile devices.
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
+void main() {
   runApp(MyApp());
 }
 
@@ -46,62 +11,203 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppLifecycleObserver(
-      child: MultiProvider(
-        // This is where you add objects that you want to have available
-        // throughout your game.
-        //
-        // Every widget in the game can access these objects by calling
-        // `context.watch()` or `context.read()`.
-        // See `lib/main_menu/main_menu_screen.dart` for example usage.
-        providers: [
-          Provider(create: (context) => SettingsController()),
-          Provider(create: (context) => Palette()),
-          ChangeNotifierProvider(create: (context) => PlayerProgress()),
-          // Set up audio.
-          ProxyProvider2<AppLifecycleStateNotifier, SettingsController,
-              AudioController>(
-            create: (context) => AudioController(),
-            update: (context, lifecycleNotifier, settings, audio) {
-              audio!.attachDependencies(lifecycleNotifier, settings);
-              return audio;
-            },
-            dispose: (context, audio) => audio.dispose(),
-            // Ensures that music starts immediately.
-            lazy: false,
-          ),
-        ],
-        child: Builder(builder: (context) {
-          final palette = context.watch<Palette>();
+    return ChangeNotifierProvider(
+      create: (context) => MyAppState(),
+      child: MaterialApp(
+        title: 'Namer App',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 111, 67, 255)),
+        ),
+        home: MyHomePage(),
+      ),
+    );
+  }
+}
 
-          return MaterialApp.router(
-            title: 'My Flutter Game',
-            theme: ThemeData.from(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: palette.darkPen,
-                background: palette.backgroundMain,
-              ),
-              textTheme: TextTheme(
-                bodyMedium: TextStyle(color: palette.ink),
-              ),
-              useMaterial3: true,
-            ).copyWith(
-              // Make buttons more fun.
-              filledButtonTheme: FilledButtonThemeData(
-                style: FilledButton.styleFrom(
-                  textStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
+class MyAppState extends ChangeNotifier {
+  var current = WordPair.random();
+
+  void getNext() {
+    current = WordPair.random();
+    notifyListeners();
+  }
+
+  var favorites = <WordPair>[];
+  void toggleFavorite() {
+    if (favorites.contains(current)) {
+      favorites.remove(current);
+    } else {
+      favorites.add(current);
+    }
+    notifyListeners();
+  }
+}
+
+// ...
+
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+
+  var selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+  //Pages
+  Widget page;
+  switch (selectedIndex) {
+    case 0:
+      page = GeneratorPage();
+    case 1:
+      page = FavoritesPage();
+    default:
+      throw UnimplementedError('no widget for $selectedIndex');
+  }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Scaffold(
+          body: Row(
+            children: [
+              SafeArea(
+                child: NavigationRail(
+                  extended: constraints.maxWidth >= 600,
+                  destinations: [
+                    NavigationRailDestination(
+                      icon: Icon(Icons.home),
+                      label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.favorite),
+                      label: Text('Favorites'),
+                    ),
+                  ],
+                  selectedIndex: selectedIndex,
+                  onDestinationSelected: (value) {
+                    setState(() {
+                      selectedIndex = value;
+                    });
+                  },
                 ),
               ),
-            ),
-            routeInformationProvider: router.routeInformationProvider,
-            routeInformationParser: router.routeInformationParser,
-            routerDelegate: router.routerDelegate,
-          );
-        }),
+              Expanded(
+                child: Container(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  child: page,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+}
+
+
+class GeneratorPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var pair = appState.current;
+
+    IconData icon;
+    if (appState.favorites.contains(pair)) {
+      icon = Icons.favorite;
+    } else {
+      icon = Icons.favorite_border;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          BigCard(pair: pair),
+          SizedBox(height: 10),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  appState.toggleFavorite();
+                },
+                icon: Icon(icon),
+                label: Text('Like'),
+              ),
+              SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () {
+                  appState.getNext();
+                },
+                child: Text('Next'),
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+}
+
+// ...
+
+class BigCard extends StatelessWidget {
+  const BigCard({
+    super.key,
+    required this.pair,
+  });
+
+  final WordPair pair;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.displayMedium!.copyWith(
+      color: theme.colorScheme.onPrimary,
+    );
+
+    return Card(
+      color: theme.colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+
+        child: Text(
+          pair.asLowerCase, 
+          style: style,
+          semanticsLabel: "${pair.first} ${pair.second}",
+        ),
+      ),
+    );
+  }
+}
+
+class FavoritesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    if (appState.favorites.isEmpty) {
+      return Center(
+        child: Text('No favorites yet.'),
+      );
+    }
+
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text('You have '
+              '${appState.favorites.length} favorites:'),
+        ),
+        for (var pair in appState.favorites)
+          ListTile(
+            leading: Icon(Icons.favorite),
+            title: Text(pair.asLowerCase),
+          ),
+      ],
     );
   }
 }
