@@ -1,3 +1,4 @@
+# Written Report: CSC 325 Spring 2024
 Written Report: Your comprehensive report should include the following sections:
 Introduction: Overview of CI/CD pipelines and their significance in modern software development.
 DevContainer Environment:Details of the Docker container configuration used for Flutter development.
@@ -20,4 +21,5 @@ The version control system utilized is Git, which organizes files into a reposit
 ## CI/CD Pipeline Environment
 The CI/CD pipeline is set up completely at the web and cloud level through the use of a GitHub repository, with no local environments used except for what each individual developer uses to edit and push their code into the repository. All testing and building is done through the use of GitHub Actions, a built-in component of every GitHub repository that allows for automatic code execution when actions such as pushing to the main branch occur, and the deployment is done through GitHub Pages, another built-in feature that hosts the deployed code or branch of choice on the web through a GitHub-affiliated domain.
 
-The deployment is provided through GitHub's cloud and network, so cloud data is not a concern on the developer's side, but network configurations that blacklist web access are a concern in terms of making sure the deployed application can be seen.
+## CI/CD Tools
+The main tools used in the project were GitHub Actions and Jenkins. GitHub Actions allows for automatic code execution through the use of highly configurable workflow files that let the developer create strings of commands *(or specialized actions provided by other developers)* within the repository that execute in reaction to triggers of the developer's choice, which allows for a facilitated build and deployment process within the CI/CD.
